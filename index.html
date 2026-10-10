@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filterable Product Table</title>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        input, button {
+            padding: 8px;
+            margin: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #eeeeee;
+            cursor: pointer;
+        }
+
+        th:hover {
+            background-color: #dddddd;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Product Management</h2>
+
+    <!-- Live Search -->
+    <input type="text" id="search"
+           placeholder="Search products...">
+
+    <!-- Add Product Form -->
+    <h3>Add New Product</h3>
+
+    <form id="productForm">
+        <input type="text" id="name"
+               placeholder="Product Name" required>
+
+        <input type="text" id="category"
+               placeholder="Category" required>
+
+        <input type="number" id="price"
+               placeholder="Price" min="0" step="0.01" required>
+
+        <button type="submit">Add Product</button>
+    </form>
+
+    <!-- Product Table -->
+    <table>
+        <thead>
+            <tr>
+                <th data-column="id">ID ↕</th>
+                <th data-column="name">Name ↕</th>
+                <th data-column="category">Category ↕</th>
+                <th data-column="price">Price ↕</th>
+            </tr>
+        </thead>
+        <tbody id="productTable"></tbody>
+    </table>
+
+    <script>
+        // JSON array of products
+        let products = [
+            { id: 1, name: "Laptop", category: "Electronics", price: 50000 },
+            { id: 2, name: "Mouse", category: "Accessories", price: 500 },
+            { id: 3, name: "Keyboard", category: "Accessories", price: 1200 },
+            { id: 4, name: "Phone", category: "Electronics", price: 25000 }
+        ];
+
+        let sortColumn = "id";
+        let ascending = true;
+
+        // Render products in the table
+        function renderTable() {
+            let searchText = $("#search").val().toLowerCase();
+
+            let filteredProducts = products.filter(function (product) {
+                return (
+                    product.name.toLowerCase().includes(searchText) ||
+                    product.category.toLowerCase().includes(searchText) ||
+                    String(product.id).includes(searchText) ||
+                    String(product.price).includes(searchText)
+                );
+            });
+
+            // Sort products
+            filteredProducts.sort(function (a, b) {
+                let valueA = a[sortColumn];
+                let valueB = b[sortColumn];
+
+                if (typeof valueA === "string") {
+                    valueA = valueA.toLowerCase();
+                    valueB = valueB.toLowerCase();
+                }
+
+                if (valueA < valueB) {
+                    return ascending ? -1 : 1;
+                }
+
+                if (valueA > valueB) {
+                    return ascending ? 1 : -1;
+                }
+
+                return 0;
+            });
+
+            // Clear existing rows
+            $("#productTable").empty();
+
+            // Add rows dynamically
+            filteredProducts.forEach(function (product) {
+                let row = $("<tr>");
+
+                $("<td>").text(product.id).appendTo(row);
+                $("<td>").text(product.name).appendTo(row);
+                $("<td>").text(product.category).appendTo(row);
+                $("<td>").text("₹" + product.price.toLocaleString("en-IN"))
+                    .appendTo(row);
+
+                $("#productTable").append(row);
+            });
+
+            if (filteredProducts.length === 0) {
+                $("#productTable").append(
+                    $("<tr>").append(
+                        $("<td>")
+                            .attr("colspan", 4)
+                            .text("No products found")
+                    )
+                );
+            }
+        }
+
+        // Live search event
+        $("#search").on("input", function () {
+            renderTable();
+        });
+
+        // Sort when a column header is clicked
+        $("th").on("click", function () {
+            let column = $(this).data("column");
+
+            if (sortColumn === column) {
+                ascending = !ascending;
+            } else {
+                sortColumn = column;
+                ascending = true;
+            }
+
+            renderTable();
+        });
+
+        // Add a new product without page reload
+        $("#productForm").on("submit", function (event) {
+            event.preventDefault();
+
+            let newProduct = {
+                id: products.length > 0
+                    ? Math.max(...products.map(p => p.id)) + 1
+                    : 1,
+                name: $("#name").val().trim(),
+                category: $("#category").val().trim(),
+                price: Number($("#price").val())
+            };
+
+            products.push(newProduct);
+
+            this.reset();
+            renderTable();
+        });
+
+        // Initial table rendering
+        renderTable();
+    </script>
+
+</body>
+</html>
